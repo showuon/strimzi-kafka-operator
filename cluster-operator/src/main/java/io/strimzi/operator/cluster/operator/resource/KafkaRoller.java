@@ -432,6 +432,7 @@ public class KafkaRoller {
             if (kafkaContainerStatus.isPresent()) {
                 ContainerStateWaiting waiting = kafkaContainerStatus.get().getState().getWaiting();
                 if (waiting != null) {
+                    LOGGER.debugCr(reconciliation, "waiting:" + waiting);
                     return reasons.contains(waiting.getReason());
                 }
             }
@@ -440,10 +441,16 @@ public class KafkaRoller {
     }
 
     private boolean isPendingAndUnschedulable(Pod pod) {
+        if (pod != null) {
+            LOGGER.debugCr(reconciliation, "status:" + pod.getStatus());
+        }
         return pod != null
                 && pod.getStatus() != null
                 && "Pending".equals(pod.getStatus().getPhase())
-                && pod.getStatus().getConditions().stream().anyMatch(ps -> "PodScheduled".equals(ps.getType()) && "Unschedulable".equals(ps.getReason()) && "False".equals(ps.getStatus()));
+                && pod.getStatus().getConditions().stream().anyMatch(ps -> {
+                    LOGGER.debugCr(reconciliation, "condition:" + ps);
+                    return "PodScheduled".equals(ps.getType()) && "Unschedulable".equals(ps.getReason()) && "False".equals(ps.getStatus())
+        });
     }
 
     private boolean isPodStuck(Pod pod) {
@@ -491,7 +498,8 @@ public class KafkaRoller {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.
-            throw new FatalProblem("Pod is unschedulable");
+//            throw new FatalProblem("Pod is unschedulable");
+            LOGGER.debugCr(reconciliation, "!!! don't throw!");
         }
         // Unless the annotation is present, check the pod is at least ready.
         boolean needsRestart = reasonToRestartPod.shouldRestart();

@@ -340,7 +340,7 @@ public class StrimziPodSetController implements Runnable {
                 LOGGER.infoCr(reconciliation, "StrimziPodSet is deleting => nothing to do");
                 metrics.successfulReconciliationsCounter(reconciliation.namespace()).increment();
             } else {
-                LOGGER.infoCr(reconciliation, "StrimziPodSet will be reconciled");
+                LOGGER.infoCr(reconciliation, "StrimziPodSet will be reconciled: " + podSet);
 
                 StrimziPodSetStatus status = new StrimziPodSetStatus();
                 status.setObservedGeneration(podSet.getMetadata().getGeneration());
