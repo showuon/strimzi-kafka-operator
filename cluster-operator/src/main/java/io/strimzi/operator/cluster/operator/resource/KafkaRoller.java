@@ -412,7 +412,7 @@ public class KafkaRoller {
         } catch (ForceableProblem e) {
             if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
                 if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
-                    LOGGER.warnCr(reconciliation, "force-roll e:" + e);
+                    LOGGER.warnCr(reconciliation, "force-roll e:" + e + ";;" + e.getMessage() + ";;" + e.getCause() + ";;" + e.getStackTrace());
                     LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", nodeRef, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartContext.restartReasons.add(RestartReason.POD_FORCE_RESTART_ON_ERROR);
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
