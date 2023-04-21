@@ -449,7 +449,7 @@ public class KafkaRoller {
                 && "Pending".equals(pod.getStatus().getPhase())
                 && pod.getStatus().getConditions().stream().anyMatch(ps -> {
                     LOGGER.debugCr(reconciliation, "condition:" + ps);
-                    return "PodScheduled".equals(ps.getType()) && "Unschedulable".equals(ps.getReason()) && "False".equals(ps.getStatus())
+                    return "PodScheduled".equals(ps.getType()) && "Unschedulable".equals(ps.getReason()) && "False".equals(ps.getStatus());
         });
     }
 
