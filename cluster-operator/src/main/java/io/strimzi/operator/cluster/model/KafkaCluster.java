@@ -290,7 +290,10 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         // Configures KRaft and KRaft cluster ID
         if (useKRaft)   {
             result.useKRaft = true;
+            LOGGER.infoCr(reconciliation, "kafkaCr.getStatus():" + kafkaAssembly.getStatus());
+            LOGGER.infoCr(reconciliation, "kafkaCr:" + kafkaAssembly);
             result.clusterId = getOrGenerateKRaftClusterId(kafkaAssembly);
+            LOGGER.infoCr(reconciliation, "clusterId:" + result.clusterId);
         }
 
         ModelUtils.validateComputeResources(kafkaClusterSpec.getResources(), ".spec.kafka.resources");
