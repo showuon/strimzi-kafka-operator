@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private boolean gcLoggingEnabled = DEFAULT_GC_LOGGING_ENABLED;
     private List<SystemProperty> javaSystemProperties;
-    private Map<String, String> xx;
+    private LinkedHashMap<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty("-Xmx")
@@ -85,11 +86,11 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     @JsonProperty("-XX")
     @Description("A map of -XX options to the JVM")
-    public Map<String, String> getXx() {
+    public LinkedHashMap<String, String> getXx() {
         return xx;
     }
 
-    public void setXx(Map<String, String> xx) {
+    public void setXx(LinkedHashMap<String, String> xx) {
         this.xx = xx;
     }
 

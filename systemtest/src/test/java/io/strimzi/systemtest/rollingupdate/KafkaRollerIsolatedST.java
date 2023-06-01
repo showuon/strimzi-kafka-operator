@@ -47,10 +47,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -177,12 +174,12 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .build());
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), namespaceName);
+                kafka.getSpec().getKafka().getJvmOptions().setXx(new LinkedHashMap<>(Collections.singletonMap("UseParNewGC", "true"))), namespaceName);
 
         KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()), namespaceName);
+                kafka.getSpec().getKafka().getJvmOptions().setXx(new LinkedHashMap<>()), namespaceName);
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
