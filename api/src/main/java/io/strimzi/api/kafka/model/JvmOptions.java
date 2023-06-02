@@ -40,7 +40,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private boolean gcLoggingEnabled = DEFAULT_GC_LOGGING_ENABLED;
     private List<SystemProperty> javaSystemProperties;
-    private LinkedHashMap<String, String> xx;
+    private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty("-Xmx")
@@ -86,7 +86,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     @JsonProperty("-XX")
     @Description("A map of -XX options to the JVM")
-    public LinkedHashMap<String, String> getXx() {
+    public Map<String, String> getXx() {
         return xx;
     }
 
