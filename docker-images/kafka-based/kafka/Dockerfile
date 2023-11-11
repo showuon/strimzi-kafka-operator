@@ -26,6 +26,10 @@ ENV STRIMZI_VERSION=${strimzi_version}
 COPY $KAFKA_DIST_DIR $KAFKA_HOME
 COPY ./scripts/ $KAFKA_HOME
 
+
+RUN rm -rf /opt/kafka/libs/
+COPY /home/parallels/Downloads/kafka_2.13-3.6.1-SNAPSHOT/libs/ /opt/kafka/libs/
+
 #####
 # Add Kafka Exporter
 #####
