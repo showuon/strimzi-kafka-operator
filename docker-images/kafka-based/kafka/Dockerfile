@@ -2,6 +2,7 @@ FROM strimzi/base:latest
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
+ARG KAFKA_LIBS_DIR
 ARG KAFKA_DIST_DIR
 ARG KAFKA_VERSION
 ARG THIRD_PARTY_LIBS
@@ -26,6 +27,8 @@ ENV STRIMZI_VERSION=${strimzi_version}
 COPY $KAFKA_DIST_DIR $KAFKA_HOME
 COPY ./scripts/ $KAFKA_HOME
 
+RUN rm -rf /opt/kafka/libs/
+COPY $KAFKA_LIBS_DIR /opt/kafka/libs/
 #####
 # Add Kafka Exporter
 #####
