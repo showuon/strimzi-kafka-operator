@@ -6,7 +6,6 @@ package io.strimzi.systemtest.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
