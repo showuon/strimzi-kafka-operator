@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -100,6 +101,10 @@ public class TieredStorageST extends AbstractST {
         );
 
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
@@ -119,6 +124,9 @@ public class TieredStorageST extends AbstractST {
                             .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
                         .endRemoteStorageManager()
                     .endTieredStorageCustomTiered()
+                    .addToConfig("default.replication.factor", 3)
+                    .addToConfig("min.insync.replicas", 2)
+                    .addToConfig("remote.log.manager.task.interval.ms", 5000)
                 .endKafka()
             .endSpec()
             .build());
