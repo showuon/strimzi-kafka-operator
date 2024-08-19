@@ -101,10 +101,10 @@ public class TieredStorageST extends AbstractST {
         );
 
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
-            .endMetadata()
+//            .editMetadata()
+//                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+//                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
+//            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
