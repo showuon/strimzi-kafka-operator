@@ -126,6 +126,7 @@ public class TieredStorageST extends AbstractST {
                     .addToConfig("default.replication.factor", 3)
                     .addToConfig("min.insync.replicas", 2)
                     .addToConfig("remote.log.manager.task.interval.ms", 5000)
+                    .addToConfig("log.retention.check.interval.ms", 5000)
                 .endKafka()
             .endSpec()
             .build());
