@@ -106,7 +106,7 @@ public class TieredStorageST extends AbstractST {
                     .withNewTieredStorageCustomTiered()
                         .withNewRemoteStorageManager()
                             .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
-                            .withClassPath("/opt/kafka/plugins/tiered-storage/*")
+                            .withClassPath("/opt/kafka/remote/*")
                             .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
                             .addToConfig("chunk.size", "4194304")
                             // s3 config
