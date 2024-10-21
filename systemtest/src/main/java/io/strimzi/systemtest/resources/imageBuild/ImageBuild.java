@@ -154,6 +154,8 @@ public class ImageBuild {
             .endSpec()
             .build();
 
+        LOGGER.info("!!! buildConfig:" + buildConfig);
+
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
                     .withName(name)
