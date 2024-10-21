@@ -12,7 +12,7 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
+//import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -23,7 +23,7 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
+//import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -105,23 +105,23 @@ public class TieredStorageST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
-                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
-                    .withNewTieredStorageCustomTiered()
-                        .withNewRemoteStorageManager()
-                            .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
-                            .withClassPath("/opt/kafka/plugins/tiered-storage/*")
-                            .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
-                            .addToConfig("chunk.size", "4194304")
-                            // s3 config
-                            .addToConfig("storage.s3.endpoint.url",
-                                    "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
-                            .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
-                            .addToConfig("storage.s3.region", "us-east-1")
-                            .addToConfig("storage.s3.path.style.access.enabled", "true")
-                            .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
-                            .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
-                        .endRemoteStorageManager()
-                    .endTieredStorageCustomTiered()
+//                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
+//                    .withNewTieredStorageCustomTiered()
+//                        .withNewRemoteStorageManager()
+//                            .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
+//                            .withClassPath("/opt/kafka/plugins/tiered-storage/*")
+//                            .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
+//                            .addToConfig("chunk.size", "4194304")
+//                            // s3 config
+//                            .addToConfig("storage.s3.endpoint.url",
+//                                    "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
+//                            .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
+//                            .addToConfig("storage.s3.region", "us-east-1")
+//                            .addToConfig("storage.s3.path.style.access.enabled", "true")
+//                            .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
+//                            .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
+//                        .endRemoteStorageManager()
+//                    .endTieredStorageCustomTiered()
                     // reduce the interval to speed up the test
                     .addToConfig("remote.log.manager.task.interval.ms", 5000)
                     .addToConfig("log.retention.check.interval.ms", 5000)
@@ -199,8 +199,8 @@ public class TieredStorageST extends AbstractST {
         NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
         cluster.setNamespace(suiteStorage.getNamespaceName());
 
-        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
-
+//        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+//
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
