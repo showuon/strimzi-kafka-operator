@@ -111,8 +111,6 @@ public class ImageBuild {
             .endSpec()
             .build();
 
-        LOGGER.info("!!! buildConfig123:" + kanikoJob);
-
         ResourceManager.getInstance().createResourceWithWait(kanikoJob);
         JobUtils.waitForJobSuccess(namespace, name, TestConstants.GLOBAL_TIMEOUT);
     }
@@ -151,12 +149,14 @@ public class ImageBuild {
                     .withType("Docker")
                     .withNewDockerStrategy()
                         .addToBuildArgs(new EnvVar("BASE_IMAGE", baseImage, null))
+                        .withNoCache(true)
+                        .withForcePull(true)
                     .endDockerStrategy()
                 .endStrategy()
             .endSpec()
             .build();
 
-        LOGGER.info("!!! buildConfig:" + buildConfig);
+        LOGGER.info("!!! buildConfig1:" + buildConfig.toString());
 
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
