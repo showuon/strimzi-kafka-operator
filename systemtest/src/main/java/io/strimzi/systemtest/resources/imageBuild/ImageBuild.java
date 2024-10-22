@@ -111,6 +111,8 @@ public class ImageBuild {
             .endSpec()
             .build();
 
+        LOGGER.info("!!! buildConfig123:" + kanikoJob);
+
         ResourceManager.getInstance().createResourceWithWait(kanikoJob);
         JobUtils.waitForJobSuccess(namespace, name, TestConstants.GLOBAL_TIMEOUT);
     }
