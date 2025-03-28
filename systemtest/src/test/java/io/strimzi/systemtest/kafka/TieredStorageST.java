@@ -170,41 +170,41 @@ public class TieredStorageST extends AbstractST {
         // MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
 //
 //
-//        // Create admin-client to check offsets
-//        resourceManager.createResourceWithWait(
-//            AdminClientTemplates.plainAdminClient(
-//                testStorage.getNamespaceName(),
-//                testStorage.getAdminName(),
-//                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-//            ).build()
-//        );
-//        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
-//
-//        TestUtils.waitFor("earliest-local offset to be higher than 0",
-//            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
-//            () -> {
-//                // Fetch earliest-local offsets
-//                // Check that data are not present locally, earliest-local offset should be higher than 0
-//                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
-//                long earliestLocalOffset = 0;
-//                try {
-//                    earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
-//                    LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
-//                } catch (JsonProcessingException e) {
-//                    return false;
-//                }
-//                return earliestLocalOffset > 0;
-//            });
-//
-//        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
-//
-//        resourceManager.createResourceWithWait(clients.consumerStrimzi());
-//        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-//
-//        // Delete data
-//        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-//            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
-//        );
+        // Create admin-client to check offsets
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            ).build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        TestUtils.waitFor("earliest-local offset to be higher than 0",
+            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
+            () -> {
+                // Fetch earliest-local offsets
+                // Check that data are not present locally, earliest-local offset should be higher than 0
+                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
+                long earliestLocalOffset = 0;
+                try {
+                    earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+                    LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
+                } catch (JsonProcessingException e) {
+                    return false;
+                }
+                return earliestLocalOffset > 0;
+            });
+
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        // Delete data
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
+        );
 //
 //        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
