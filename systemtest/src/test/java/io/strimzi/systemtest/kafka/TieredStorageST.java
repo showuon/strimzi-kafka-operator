@@ -111,7 +111,7 @@ public class TieredStorageST extends AbstractST {
                             .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
                             .withClassPath("/opt/kafka/plugins/tiered-storage/*")
                             .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.filesystem.FileSystemStorage")
-                            .addToConfig("storage.root", "/tmp/") // /var/lib/kafka/data-0/
+                            .addToConfig("storage.root", "/tmp/remote/") // /var/lib/kafka/data-0/
                             .addToConfig("chunk.size", "4194304")
                         .endRemoteStorageManager()
                     .endTieredStorageCustomTiered()
