@@ -148,9 +148,10 @@ public class TieredStorageST extends AbstractST {
 
 
 
-        System.out.println("!!! out:" + kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()));
+        String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName());
+        System.out.println("!!! out:" + podName);
 //        System.out.println("!!! out2:" + kubeClient().list(testStorage.getNamespaceName(), testStorage.getScraperName()));
-        String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+        String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
         System.out.println("!!! output:" + output);
 
 //        TestUtils.waitFor("waiting", 100, 100000, () -> {
@@ -200,7 +201,7 @@ public class TieredStorageST extends AbstractST {
                 return earliestLocalOffset > 0;
             });
 
-        output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+        output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
         System.out.println("!!! output:" + output);
 
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
