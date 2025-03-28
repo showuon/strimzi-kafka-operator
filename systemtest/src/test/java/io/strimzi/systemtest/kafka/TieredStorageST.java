@@ -145,12 +145,13 @@ public class TieredStorageST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
-        System.out.println("!!! name:" + testStorage.getTopicName());
+        System.out.println("!!! name:" + testStorage.getScraperName() + ";;" + testStorage.getBrokerPoolName());
 
 
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-        String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+        System.out.println("!!! out:" + kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()));
+//        System.out.println("!!! out2:" + kubeClient().list(testStorage.getNamespaceName(), testStorage.getScraperName()));
+        String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
         System.out.println("!!! output:" + output);
 
 //        TestUtils.waitFor("waiting", 100, 100000, () -> {
@@ -183,7 +184,6 @@ public class TieredStorageST extends AbstractST {
             ).build()
         );
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
-        KafkaTopicUtils.waitForKafkaTopicSpecStability(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
 
         TestUtils.waitFor("earliest-local offset to be higher than 0",
             TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
