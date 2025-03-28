@@ -5,11 +5,13 @@
 package io.strimzi.systemtest.kafka;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -17,17 +19,23 @@ import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.ContainerRuntimeUtils;
+import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -186,110 +194,110 @@ public class TieredStorageST extends AbstractST {
 //        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
-//    void testTieredStorageWithAivenS3Plugin() {
-//        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-//
-//        resourceManager.createResourceWithWait(
-//                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
-//                        .editSpec()
-//                        .withNewPersistentClaimStorage()
-//                        .withSize("10Gi")
-//                        .withDeleteClaim(true)
-//                        .endPersistentClaimStorage()
-//                        .endSpec()
-//                        .build(),
-//                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
-//        );
-//
-//        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-//                .editSpec()
-//                .editKafka()
-//                .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
-//                .withNewTieredStorageCustomTiered()
-//                .withNewRemoteStorageManager()
-//                .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
-//                .withClassPath("/opt/kafka/plugins/tiered-storage/*")
-//                .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
-//                .addToConfig("chunk.size", "4194304")
-//                // s3 config
-//                .addToConfig("storage.s3.endpoint.url",
-//                        "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
-//                .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
-//                .addToConfig("storage.s3.region", "us-east-1")
-//                .addToConfig("storage.s3.path.style.access.enabled", "true")
-//                .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
-//                .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
-//                .endRemoteStorageManager()
-//                .endTieredStorageCustomTiered()
-//                // reduce the interval to speed up the test
-//                .addToConfig("remote.log.manager.task.interval.ms", 5000)
-//                .addToConfig("log.retention.check.interval.ms", 5000)
-//                .endKafka()
-//                .endSpec()
-//                .build());
-//
-//        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
-//                .editSpec()
-//                .addToConfig("file.delete.delay.ms", 1000)
-//                .addToConfig("local.retention.ms", 1000)
-//                // Allow tiered storage sync
-//                .addToConfig("remote.storage.enable", true)
-//                // Bytes retention set to 1024mb
-//                .addToConfig("retention.bytes", 1073741824)
-//                .addToConfig("retention.ms", 86400000)
-//                // Segment size is set to 10mb to make it quickier to sync data to Minio
-//                .addToConfig("segment.bytes", 1048576)
-//                .endSpec()
-//                .build());
-//
-//        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-//                .withMessageCount(10000)
-//                .withDelayMs(1)
-//                .withMessage(String.join("", Collections.nCopies(5000, "#")))
-//                .build();
-//
-//        resourceManager.createResourceWithWait(clients.producerStrimzi());
-//
-//        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
-//
-//        // Create admin-client to check offsets
-//        resourceManager.createResourceWithWait(
-//                AdminClientTemplates.plainAdminClient(
-//                        testStorage.getNamespaceName(),
-//                        testStorage.getAdminName(),
-//                        KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-//                ).build()
-//        );
-//        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
-//
-//        TestUtils.waitFor("earliest-local offset to be higher than 0",
-//                TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
-//                () -> {
-//                    // Fetch earliest-local offsets
-//                    // Check that data are not present locally, earliest-local offset should be higher than 0
-//                    String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
-//                    long earliestLocalOffset = 0;
-//                    try {
-//                        earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
-//                        LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
-//                    } catch (JsonProcessingException e) {
-//                        return false;
-//                    }
-//                    return earliestLocalOffset > 0;
-//                });
-//
-//        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
-//
-//        resourceManager.createResourceWithWait(clients.consumerStrimzi());
-//        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-//
-//        // Delete data
-//        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-//                testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
-//        );
-//
-//        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
-//    }
+    void testTieredStorageWithAivenS3Plugin() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+
+        resourceManager.createResourceWithWait(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                        .editSpec()
+                        .withNewPersistentClaimStorage()
+                        .withSize("10Gi")
+                        .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                        .endSpec()
+                        .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+        );
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+                .editSpec()
+                .editKafka()
+                .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
+                .withNewTieredStorageCustomTiered()
+                .withNewRemoteStorageManager()
+                .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
+                .withClassPath("/opt/kafka/plugins/tiered-storage/*")
+                .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
+                .addToConfig("chunk.size", "4194304")
+                // s3 config
+                .addToConfig("storage.s3.endpoint.url",
+                        "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
+                .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
+                .addToConfig("storage.s3.region", "us-east-1")
+                .addToConfig("storage.s3.path.style.access.enabled", "true")
+                .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
+                .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
+                .endRemoteStorageManager()
+                .endTieredStorageCustomTiered()
+                // reduce the interval to speed up the test
+                .addToConfig("remote.log.manager.task.interval.ms", 5000)
+                .addToConfig("log.retention.check.interval.ms", 5000)
+                .endKafka()
+                .endSpec()
+                .build());
+
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
+                .editSpec()
+                .addToConfig("file.delete.delay.ms", 1000)
+                .addToConfig("local.retention.ms", 1000)
+                // Allow tiered storage sync
+                .addToConfig("remote.storage.enable", true)
+                // Bytes retention set to 1024mb
+                .addToConfig("retention.bytes", 1073741824)
+                .addToConfig("retention.ms", 86400000)
+                // Segment size is set to 10mb to make it quickier to sync data to Minio
+                .addToConfig("segment.bytes", 1048576)
+                .endSpec()
+                .build());
+
+        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
+                .withMessageCount(10000)
+                .withDelayMs(1)
+                .withMessage(String.join("", Collections.nCopies(5000, "#")))
+                .build();
+
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
+
+        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+
+        // Create admin-client to check offsets
+        resourceManager.createResourceWithWait(
+                AdminClientTemplates.plainAdminClient(
+                        testStorage.getNamespaceName(),
+                        testStorage.getAdminName(),
+                        KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+                ).build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        TestUtils.waitFor("earliest-local offset to be higher than 0",
+                TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
+                () -> {
+                    // Fetch earliest-local offsets
+                    // Check that data are not present locally, earliest-local offset should be higher than 0
+                    String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
+                    long earliestLocalOffset = 0;
+                    try {
+                        earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+                        LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
+                    } catch (JsonProcessingException e) {
+                        return false;
+                    }
+                    return earliestLocalOffset > 0;
+                });
+
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        // Delete data
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+                testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
+        );
+
+        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+    }
 
     @BeforeAll
     void setup() throws IOException {
