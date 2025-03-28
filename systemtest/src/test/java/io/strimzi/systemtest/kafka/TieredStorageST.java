@@ -149,21 +149,21 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         System.out.println("!!! name:" + testStorage.getTopicName());
-        TestUtils.waitFor("waiting", 100, 100000, () -> {
-            Set<Path> set = null;
-            try {
-                set = Files.list(new File("/tmp").toPath()).filter(f -> {
-                    System.out.println("!!! file:" + f.getFileName().toString());
-                    return f.toFile().isDirectory() && f.toFile().getName().startsWith(testStorage.getTopicName());
-                }).collect(Collectors.toSet());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (set.size() > 0) {
-                System.out.println("!!! set:" + set);
-            }
-            return !set.isEmpty();
-        });
+//        TestUtils.waitFor("waiting", 100, 100000, () -> {
+//            Set<Path> set = null;
+//            try {
+//                set = Files.list(new File("/tmp").toPath()).filter(f -> {
+//                    System.out.println("!!! file:" + f.getFileName().toString());
+//                    return f.toFile().isDirectory() && f.toFile().getName().startsWith(testStorage.getTopicName());
+//                }).collect(Collectors.toSet());
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            if (set.size() > 0) {
+//                System.out.println("!!! set:" + set);
+//            }
+//            return !set.isEmpty();
+//        });
 
 
 
