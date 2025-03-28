@@ -17,6 +17,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
@@ -32,6 +33,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.specific.ContainerRuntimeUtils;
 import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
@@ -46,6 +48,7 @@ import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
@@ -91,18 +94,17 @@ public class TieredStorageST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+            KafkaNodePoolTemplates.mixedPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1)
                 .editSpec()
                     .withNewPersistentClaimStorage()
                         .withSize("10Gi")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endSpec()
-                .build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                .build()
         );
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .editKafka()
                     .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
@@ -144,6 +146,13 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         System.out.println("!!! name:" + testStorage.getTopicName());
+
+
+
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+        System.out.println("!!! output:" + output);
+
 //        TestUtils.waitFor("waiting", 100, 100000, () -> {
 //            Set<Path> set = null;
 //            try {
@@ -174,6 +183,7 @@ public class TieredStorageST extends AbstractST {
             ).build()
         );
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+        KafkaTopicUtils.waitForKafkaTopicSpecStability(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
 
         TestUtils.waitFor("earliest-local offset to be higher than 0",
             TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
@@ -190,6 +200,9 @@ public class TieredStorageST extends AbstractST {
                 }
                 return earliestLocalOffset > 0;
             });
+
+        output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+        System.out.println("!!! output:" + output);
 
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 

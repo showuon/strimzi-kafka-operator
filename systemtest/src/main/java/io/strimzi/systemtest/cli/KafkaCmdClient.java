@@ -46,6 +46,12 @@ public class KafkaCmdClient {
             .out();
     }
 
+    public static String getSizeOfDirectory(final String namespaceName, String podName, String bootstrapServer, String topicName, String dir) {
+        return cmdKubeClient().namespace(namespaceName).execInPod(podName, "ls",
+                        dir)
+                .out();
+    }
+
     public static String describeUserUsingPodCli(String namespaceName, String podName, String bootstrapServer, String userName) {
         return describeKafkaEntityUsingPodCli(namespaceName, podName, bootstrapServer, "users", userName);
     }
