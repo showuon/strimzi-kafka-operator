@@ -143,6 +143,14 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
+        System.out.println("!!! created!!!");
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         // MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
 //
 //
