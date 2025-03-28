@@ -281,7 +281,7 @@ public class KubeClient {
      */
     public List<Pod> listPodsByPrefixInName(String namespaceName, String podNamePrefix) {
         return listPods(namespaceName)
-                .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
+                .stream().filter(p -> p.getMetadata().getName().endsWith(podNamePrefix))
                 .collect(Collectors.toList());
     }
 
