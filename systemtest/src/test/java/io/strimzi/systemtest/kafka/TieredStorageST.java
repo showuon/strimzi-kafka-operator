@@ -41,8 +41,13 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
@@ -111,7 +116,7 @@ public class TieredStorageST extends AbstractST {
                             .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
                             .withClassPath("/opt/kafka/plugins/tiered-storage/*")
                             .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.filesystem.FileSystemStorage")
-                            .addToConfig("storage.root", "/tmp/remote/") // /var/lib/kafka/data-0/
+                            .addToConfig("storage.root", "/tmp") // /var/lib/kafka/data-0/
                             .addToConfig("chunk.size", "4194304")
                         .endRemoteStorageManager()
                     .endTieredStorageCustomTiered()
@@ -143,14 +148,19 @@ public class TieredStorageST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
+        System.out.println("!!! name:" + testStorage.getTopicName());
+        TestUtils.waitFor("waiting", 100, 10000, () -> {
+            Set<Path> set = null;
+            try {
+                set = Files.list(new File("/tmp").toPath()).filter(f -> f.toFile().isDirectory() && f.toFile().getName().startsWith(testStorage.getTopicName())).collect(Collectors.toSet());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("!!! set:" + set);
+            return !set.isEmpty();
+        });
 
-        System.out.println("!!! created!!!");
 
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
         // MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
 //
