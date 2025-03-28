@@ -200,7 +200,7 @@ public class TieredStorageST extends AbstractST {
                 return earliestLocalOffset > 0;
             });
 
-        output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+        output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
         System.out.println("!!! output:" + output);
 
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
