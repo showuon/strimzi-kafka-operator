@@ -213,6 +213,12 @@ public class TieredStorageST extends AbstractST {
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
+
+        try {
+            Thread.sleep(1000000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 //
 //        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
