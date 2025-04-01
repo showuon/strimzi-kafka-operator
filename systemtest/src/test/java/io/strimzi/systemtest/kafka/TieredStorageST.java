@@ -100,8 +100,7 @@ public class TieredStorageST extends AbstractST {
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endSpec()
-                .build()
-        );
+                .build());
 
         resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
