@@ -117,7 +117,7 @@ public class TieredStorageST extends AbstractST {
                     .endTieredStorageCustomTiered()
                     // reduce the interval to speed up the test
                     .addToConfig("remote.log.manager.task.interval.ms", 5000)
-                    .addToConfig("remote.log.metadata.topic.replication.factor", 1)
+                    .addToConfig("rlmm.config.remote.log.metadata.topic.replication.factor", 1)
                     .addToConfig("log.retention.check.interval.ms", 5000)
                 .endKafka()
             .endSpec()
