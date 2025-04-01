@@ -159,8 +159,6 @@ public class TieredStorageST extends AbstractST {
         TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
             String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/" + testStorage.getTopicName() + "*");
             System.out.println("!!! output of tmp:" + output);
-            if (output.contains("No such file or directory"))
-                return false;
 
             String[] parsed = output.split("\\s+");
             System.out.println("!!! parsed:" + Arrays.toString(parsed));
@@ -235,18 +233,16 @@ public class TieredStorageST extends AbstractST {
         );
 
         TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/" + testStorage.getTopicName() + "*");
-            System.out.println("!!! output of tmp:" + output);
-            if (output.contains("No such file or directory"))
-                return true;
-            return false;
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+            System.out.println("!!! output of tmp2:" + output);
+            return !output.contains(testStorage.getTopicName());
         });
 
-        try {
-            Thread.sleep(1000000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            Thread.sleep(1000000);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
 //
 //        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
