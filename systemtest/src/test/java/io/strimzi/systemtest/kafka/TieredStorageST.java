@@ -147,7 +147,7 @@ public class TieredStorageST extends AbstractST {
 
 
 
-        String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName());
+        String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
         System.out.println("!!! out:" + podName);
 //        System.out.println("!!! out2:" + kubeClient().list(testStorage.getNamespaceName(), testStorage.getScraperName()));
         String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
