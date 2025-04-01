@@ -43,7 +43,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
@@ -151,8 +153,29 @@ public class TieredStorageST extends AbstractST {
         String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
         System.out.println("!!! out:" + podName);
 //        System.out.println("!!! out2:" + kubeClient().list(testStorage.getNamespaceName(), testStorage.getScraperName()));
-        String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
-        System.out.println("!!! output:" + output);
+
+
+
+
+        TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+            System.out.println("!!! output of tmp:" + output);
+            if (output.contains("No such file or directory"))
+                return false;
+
+            String[] parsed = output.split("\\s+");
+            System.out.println("!!! parsed:" + Arrays.toString(parsed));
+            if (parsed.length < 2) {
+                return false;
+            }
+            long sizeInByte = Long.parseLong(parsed[0]);
+
+            LOGGER.info("Collected bucket size: {} bytes", sizeInByte);
+
+            return sizeInByte > 0;
+        });
+
+
 
 //        TestUtils.waitFor("waiting", 100, 100000, () -> {
 //            Set<Path> set = null;
@@ -201,8 +224,6 @@ public class TieredStorageST extends AbstractST {
                 return earliestLocalOffset > 0;
             });
 
-        output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
-        System.out.println("!!! output:" + output);
 
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
@@ -213,6 +234,14 @@ public class TieredStorageST extends AbstractST {
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
+
+        TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+            System.out.println("!!! output of tmp:" + output);
+            if (output.contains("No such file or directory"))
+                return true;
+            return false;
+        });
 
         try {
             Thread.sleep(1000000);
