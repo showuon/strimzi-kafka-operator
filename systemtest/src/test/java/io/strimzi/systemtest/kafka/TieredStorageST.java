@@ -157,7 +157,7 @@ public class TieredStorageST extends AbstractST {
 
 
         TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/" + testStorage.getTopicName() + "*");
             System.out.println("!!! output of tmp:" + output);
             if (output.contains("No such file or directory"))
                 return false;
@@ -235,7 +235,7 @@ public class TieredStorageST extends AbstractST {
         );
 
         TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/" + testStorage.getTopicName() + "*");
             System.out.println("!!! output of tmp:" + output);
             if (output.contains("No such file or directory"))
                 return true;
