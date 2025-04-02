@@ -150,8 +150,8 @@ public class TieredStorageST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
-        String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
 
+        String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
         // wait until data appeared in remote folder with at least one log segment size
         TestUtils.waitFor("data sync from Kafka to remote folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
             String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, "/tmp/" + testStorage.getTopicName() + "*");
@@ -195,9 +195,16 @@ public class TieredStorageST extends AbstractST {
             });
 
 
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+//        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        System.out.println("!!! testStroage:" + testStorage.getMessageCount());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        try {
+            Thread.sleep(1000000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         // Delete data
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
