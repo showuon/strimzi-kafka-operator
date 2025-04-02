@@ -232,10 +232,11 @@ public class TieredStorageST extends AbstractST {
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
+        // should use ls??
         TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/");
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/" + testStorage.getTopicName() + "*");
             System.out.println("!!! output of tmp2:" + output);
-            return !output.contains(testStorage.getTopicName());
+            return output.contains("No such file or directory");
         });
 
 //        try {

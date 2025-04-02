@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.cli;
 
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.Level;
 
 import java.util.Arrays;
@@ -47,10 +48,10 @@ public class KafkaCmdClient {
     }
 
     public static String getSizeOfDirectory(final String namespaceName, String podName, String bootstrapServer, String topicName, String dir) {
-        return cmdKubeClient().namespace(namespaceName).execInPod(podName, "bash",
+        ExecResult result = cmdKubeClient().namespace(namespaceName).execInPod(podName, "bash",
                         "-c",
-                        "du -sb " + dir)
-                .out();
+                        "du -sb " + dir);
+        return result.err().isEmpty() ? result.err() : result.out();
     }
 
     public static String describeUserUsingPodCli(String namespaceName, String podName, String bootstrapServer, String userName) {
