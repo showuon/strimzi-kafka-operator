@@ -75,6 +75,7 @@ public class TieredStorageST extends AbstractST {
     private static final String BUCKET_NAME = "test-bucket";
     private static final String BUILT_IMAGE_TAG = "latest";
     private static final int SEGMENT_BYTE = 1048576;
+    private static final int MESSAGE_COUNT = 10000;
     private TestStorage suiteStorage;
 
     @ParallelTest
@@ -144,7 +145,7 @@ public class TieredStorageST extends AbstractST {
             .build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withMessageCount(10000)
+            .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(1)
             .withMessage(String.join("", Collections.nCopies(500, "#")))
             .build();
@@ -196,17 +197,8 @@ public class TieredStorageST extends AbstractST {
             });
 
 
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        System.out.println("!!! testStroage:" + testStorage.getMessageCount());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 10000, false);
-        System.out.println("!!! testStroage done:" + 10000);
-
-        try {
-            Thread.sleep(1000000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
@@ -294,7 +286,7 @@ public class TieredStorageST extends AbstractST {
                 .build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-                .withMessageCount(10000)
+                .withMessageCount(MESSAGE_COUNT)
                 .withDelayMs(1)
                 .withMessage(String.join("", Collections.nCopies(5000, "#")))
                 .build();
@@ -329,10 +321,8 @@ public class TieredStorageST extends AbstractST {
                     return earliestLocalOffset > 0;
                 });
 
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
-
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
