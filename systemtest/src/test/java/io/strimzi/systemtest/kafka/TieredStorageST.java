@@ -157,7 +157,7 @@ public class TieredStorageST extends AbstractST {
             throw new RuntimeException(e);
         }
 
-        String podName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
+        String podName = kubeClient().listPodsBySuffixInName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName() + "-0").get(0).getMetadata().getName();
         // wait until data appeared in remote folder with at least one log segment size
         TestUtils.waitFor("data sync from Kafka to remote folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
             String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, "/tmp/" + testStorage.getTopicName() + "*");
