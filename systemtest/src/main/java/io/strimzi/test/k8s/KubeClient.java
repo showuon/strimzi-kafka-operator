@@ -274,14 +274,14 @@ public class KubeClient {
     }
 
     /**
-     * Returns list of pods by suffix in pod name
+     * Returns list of pods contains the name
      * @param namespaceName Namespace name
-     * @param podNameSuffix suffix with which the name should begin
+     * @param name          name exists in the pod name
      * @return List of pods
      */
-    public List<Pod> listPodsBySuffixInName(String namespaceName, String podNameSuffix) {
+    public List<Pod> listPodsContainsName(String namespaceName, String name) {
         return listPods(namespaceName)
-                .stream().filter(p -> p.getMetadata().getName().endsWith(podNameSuffix))
+                .stream().filter(p -> p.getMetadata().getName().contains(name))
                 .collect(Collectors.toList());
     }
 
