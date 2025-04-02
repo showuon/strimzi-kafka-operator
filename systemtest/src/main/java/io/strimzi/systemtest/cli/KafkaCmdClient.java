@@ -50,7 +50,7 @@ public class KafkaCmdClient {
     public static String getSizeOfDirectory(final String namespaceName, String podName, String path) {
         ExecResult result = cmdKubeClient().namespace(namespaceName).execInPod(Level.INFO, podName, false,  "bash",
                         "-c",
-                        "'du -sb " + path + "'");
+                        "du -sb " + path);
         return result.err().isEmpty() ? result.out() : result.err();
     }
 
