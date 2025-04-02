@@ -199,7 +199,7 @@ public class TieredStorageST extends AbstractST {
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         System.out.println("!!! testStroage:" + testStorage.getMessageCount());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 10000);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 10000, false);
         System.out.println("!!! testStroage done:" + 10000);
 
         try {
