@@ -146,7 +146,7 @@ public class TieredStorageST extends AbstractST {
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withMessageCount(10000)
             .withDelayMs(1)
-            .withMessage(String.join("", Collections.nCopies(5000, "#")))
+            .withMessage(String.join("", Collections.nCopies(500, "#")))
             .build();
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
@@ -196,10 +196,11 @@ public class TieredStorageST extends AbstractST {
             });
 
 
-//        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         System.out.println("!!! testStroage:" + testStorage.getMessageCount());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        System.out.println("!!! testStroage done:" + testStorage.getMessageCount());
 
         try {
             Thread.sleep(1000000);
