@@ -293,7 +293,7 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
-        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME, SEGMENT_BYTE);
+        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
         // Create admin-client to check offsets
         resourceManager.createResourceWithWait(
