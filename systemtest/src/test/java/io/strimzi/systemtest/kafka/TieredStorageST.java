@@ -159,6 +159,9 @@ public class TieredStorageST extends AbstractST {
         TestUtils.waitFor("data sync from Kafka to another folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
             String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, testStorage.getBrokerPoolName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "/tmp/" + testStorage.getTopicName() + "*");
             System.out.println("!!! output of tmp:" + output);
+            if (output.contains("No such file or directory")) {
+                return false;
+            }
 
             String[] parsed = output.split("\\s+");
             System.out.println("!!! parsed:" + Arrays.toString(parsed));
@@ -169,7 +172,7 @@ public class TieredStorageST extends AbstractST {
 
             LOGGER.info("Collected bucket size: {} bytes", sizeInByte);
 
-            return sizeInByte > 0;
+            return sizeInByte >= 1048576;
         });
 
 
