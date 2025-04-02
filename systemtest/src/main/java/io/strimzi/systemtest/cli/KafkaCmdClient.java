@@ -51,7 +51,7 @@ public class KafkaCmdClient {
         ExecResult result = cmdKubeClient().namespace(namespaceName).execInPod(podName, "bash",
                         "-c",
                         "du -sb " + dir);
-        System.out.println("!!! result.err():" + result.err() + result.err().isBlank());
+        System.out.println("!!! result.err():" + result.err() + result.err().isBlank() + result.err().isEmpty());
         System.out.println("!!! result.out():" + result.out());
         return result.err().isEmpty() ? result.out() : result.err();
     }
