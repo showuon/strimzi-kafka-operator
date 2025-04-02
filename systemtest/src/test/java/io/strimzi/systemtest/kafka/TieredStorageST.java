@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafka;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -77,141 +75,6 @@ public class TieredStorageST extends AbstractST {
     private static final int SEGMENT_BYTE = 1048576;
     private static final int MESSAGE_COUNT = 10000;
     private TestStorage suiteStorage;
-
-    @ParallelTest
-    @TestDoc(
-        description = @Desc("This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use the FileSystem plugin in Aiven Tiered Storage project (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>)."),
-        steps = {
-            @Step(value = "Deploys KafkaNodePool resource using combined KRaft node with PV of size 10Gi.", expected = "KafkaNodePool resource is deployed successfully with specified configuration."),
-            @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to another folder, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
-            @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
-            @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
-            @Step(value = "Wait until the remote folder size is greater than one log segment size (contains data from Kafka).", expected = "The remote folder contains at least one log segment from Kafka."),
-            @Step(value = "Wait until the earliest-local offset to be higher than 0.", expected = "The log segments uploaded to the remote folder are deleted locally."),
-            @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in remote folder.", expected = "Consumer can consume all the messages successfully."),
-            @Step(value = "Alter the topic config to retention.ms=10 sec to test the remote log deletion.", expected = "The topic config is altered successfully."),
-            @Step(value = "Wait until the remote folder is deleted.", expected = "The data in the remote folder are deleted.")
-
-        },
-        labels = {
-            @Label(value = TestDocsLabels.KAFKA)
-        }
-    )
-    void testTieredStorageWithAivenFileSystemPlugin() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.mixedPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1)
-                .editSpec()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10Gi")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endSpec()
-                .build());
-
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 1)
-            .editSpec()
-                .editKafka()
-                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
-                    .withNewTieredStorageCustomTiered()
-                        .withNewRemoteStorageManager()
-                            .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
-                            .withClassPath("/opt/kafka/plugins/tiered-storage/*")
-                            .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.filesystem.FileSystemStorage")
-                            .addToConfig("storage.root", "/tmp")
-                            .addToConfig("chunk.size", "4194304")
-                        .endRemoteStorageManager()
-                    .endTieredStorageCustomTiered()
-                    // reduce the interval to speed up the test
-                    .addToConfig("remote.log.manager.task.interval.ms", 5000)
-                    .addToConfig("rlmm.config.remote.log.metadata.topic.replication.factor", 1)
-                    .addToConfig("log.retention.check.interval.ms", 5000)
-                .endKafka()
-            .endSpec()
-            .build());
-
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
-            .editSpec()
-                .addToConfig("file.delete.delay.ms", 1000)
-                .addToConfig("local.retention.ms", 1000)
-                // Allow tiered storage sync
-                .addToConfig("remote.storage.enable", true)
-                // Bytes retention set to 1024mb
-                .addToConfig("retention.bytes", 1073741824)
-                .addToConfig("retention.ms", 86400000)
-                // Segment size is set to 10mb to make it quicker to sync data to Minio
-                .addToConfig("segment.bytes", SEGMENT_BYTE)
-            .endSpec()
-            .build());
-
-        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withMessageCount(MESSAGE_COUNT)
-            .withDelayMs(1)
-            .withMessage(String.join("", Collections.nCopies(300, "#")))
-            .build();
-
-        resourceManager.createResourceWithWait(clients.producerStrimzi());
-
-        // only 1 pod will be returned since this is a combined (controller + broker) node
-        String podName = kubeClient().listPodsContainsName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
-        // wait until data appeared in remote folder with at least one log segment size
-        TestUtils.waitFor("data sync from Kafka to remote folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, "/tmp/" + testStorage.getTopicName() + "*");
-            if (output.contains("No such file or directory")) {
-                return false;
-            }
-
-            String[] parsed = output.split("\\s+");
-            if (parsed.length != 2) {
-                return false;
-            }
-            long sizeInByte = Long.parseLong(parsed[0]);
-            LOGGER.info("Collected remote folder size: {} bytes", sizeInByte);
-            return sizeInByte >= SEGMENT_BYTE;
-        });
-
-        // Create admin-client to check offsets
-        resourceManager.createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
-                testStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-            ).build()
-        );
-        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
-
-        TestUtils.waitFor("earliest-local offset to be higher than 0",
-            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
-            () -> {
-                // Fetch earliest-local offsets
-                // Check that data are not present locally, earliest-local offset should be higher than 0
-                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
-                long earliestLocalOffset = 0;
-                try {
-                    earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
-                    LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
-                } catch (JsonProcessingException e) {
-                    return false;
-                }
-                return earliestLocalOffset > 0;
-            });
-
-
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
-
-        // Delete data
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
-        );
-
-        // wait for remote data deletion
-        TestUtils.waitFor("data deletion in remote folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, "/tmp/" + testStorage.getTopicName() + "*");
-            return output.contains("No such file or directory");
-        });
-    }
 
     @ParallelTest
     @TestDoc(
@@ -332,6 +195,141 @@ public class TieredStorageST extends AbstractST {
         );
 
         MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+    }
+
+    @ParallelTest
+    @TestDoc(
+            description = @Desc("This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use the FileSystem plugin in Aiven Tiered Storage project (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>)."),
+            steps = {
+                    @Step(value = "Deploys KafkaNodePool resource using combined KRaft node with PV of size 10Gi.", expected = "KafkaNodePool resource is deployed successfully with specified configuration."),
+                    @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to another folder, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
+                    @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
+                    @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
+                    @Step(value = "Wait until the remote folder size is greater than one log segment size (contains data from Kafka).", expected = "The remote folder contains at least one log segment from Kafka."),
+                    @Step(value = "Wait until the earliest-local offset to be higher than 0.", expected = "The log segments uploaded to the remote folder are deleted locally."),
+                    @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in remote folder.", expected = "Consumer can consume all the messages successfully."),
+                    @Step(value = "Alter the topic config to retention.ms=10 sec to test the remote log deletion.", expected = "The topic config is altered successfully."),
+                    @Step(value = "Wait until the remote folder is deleted.", expected = "The data in the remote folder are deleted.")
+
+            },
+            labels = {
+                    @Label(value = TestDocsLabels.KAFKA)
+            }
+    )
+    void testTieredStorageWithAivenFileSystemPlugin() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+
+        resourceManager.createResourceWithWait(
+                KafkaNodePoolTemplates.mixedPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1)
+                        .editSpec()
+                        .withNewPersistentClaimStorage()
+                        .withSize("10Gi")
+                        .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                        .endSpec()
+                        .build());
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+                .editSpec()
+                .editKafka()
+                .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
+                .withNewTieredStorageCustomTiered()
+                .withNewRemoteStorageManager()
+                .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
+                .withClassPath("/opt/kafka/plugins/tiered-storage/*")
+                .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.filesystem.FileSystemStorage")
+                .addToConfig("storage.root", "/tmp")
+                .addToConfig("chunk.size", "4194304")
+                .endRemoteStorageManager()
+                .endTieredStorageCustomTiered()
+                // reduce the interval to speed up the test
+                .addToConfig("remote.log.manager.task.interval.ms", 5000)
+                .addToConfig("rlmm.config.remote.log.metadata.topic.replication.factor", 1)
+                .addToConfig("log.retention.check.interval.ms", 5000)
+                .endKafka()
+                .endSpec()
+                .build());
+
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
+                .editSpec()
+                .addToConfig("file.delete.delay.ms", 1000)
+                .addToConfig("local.retention.ms", 1000)
+                // Allow tiered storage sync
+                .addToConfig("remote.storage.enable", true)
+                // Bytes retention set to 1024mb
+                .addToConfig("retention.bytes", 1073741824)
+                .addToConfig("retention.ms", 86400000)
+                // Segment size is set to 10mb to make it quicker to sync data to Minio
+                .addToConfig("segment.bytes", SEGMENT_BYTE)
+                .endSpec()
+                .build());
+
+        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
+                .withMessageCount(MESSAGE_COUNT)
+                .withDelayMs(1)
+                .withMessage(String.join("", Collections.nCopies(300, "#")))
+                .build();
+
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
+
+        // only 1 pod will be returned since this is a combined (controller + broker) node
+        String podName = kubeClient().listPodsContainsName(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).get(0).getMetadata().getName();
+        // wait until data appeared in remote folder with at least one log segment size
+        TestUtils.waitFor("data sync from Kafka to remote folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, "/tmp/" + testStorage.getTopicName() + "*");
+            if (output.contains("No such file or directory")) {
+                return false;
+            }
+
+            String[] parsed = output.split("\\s+");
+            if (parsed.length != 2) {
+                return false;
+            }
+            long sizeInByte = Long.parseLong(parsed[0]);
+            LOGGER.info("Collected remote folder size: {} bytes", sizeInByte);
+            return sizeInByte >= SEGMENT_BYTE;
+        });
+
+        // Create admin-client to check offsets
+        resourceManager.createResourceWithWait(
+                AdminClientTemplates.plainAdminClient(
+                        testStorage.getNamespaceName(),
+                        testStorage.getAdminName(),
+                        KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+                ).build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        TestUtils.waitFor("earliest-local offset to be higher than 0",
+                TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
+                () -> {
+                    // Fetch earliest-local offsets
+                    // Check that data are not present locally, earliest-local offset should be higher than 0
+                    String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
+                    long earliestLocalOffset = 0;
+                    try {
+                        earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+                        LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
+                    } catch (JsonProcessingException e) {
+                        return false;
+                    }
+                    return earliestLocalOffset > 0;
+                });
+
+
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
+
+        // Delete data
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+                testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
+        );
+
+        // wait for remote data deletion
+        TestUtils.waitFor("data deletion in remote folder", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
+            String output = KafkaCmdClient.getSizeOfDirectory(testStorage.getNamespaceName(), podName, "/tmp/" + testStorage.getTopicName() + "*");
+            return output.contains("No such file or directory");
+        });
     }
 
     @BeforeAll
