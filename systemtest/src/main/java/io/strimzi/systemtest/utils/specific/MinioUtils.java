@@ -55,12 +55,13 @@ public class MinioUtils {
     }
 
     /**
-     * Wait until size of the bucket is not 0 B.
+     * Wait until size of the bucket is not greater than <code>minSize</code>.
      *
      * @param namespaceName Minio location
      * @param bucketName    bucket name
+     * @param minSize       min size of the bucket
      */
-    public static void waitForDataInMinio(String namespaceName, String bucketName) {
+    public static void waitForDataInMinio(String namespaceName, String bucketName, int minSize) {
         TestUtils.waitFor("data sync from Kafka to Minio", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
             String bucketSizeInfo = getBucketSizeInfo(namespaceName, bucketName);
             Map<String, Object> parsedSize = parseTotalSize(bucketSizeInfo);
@@ -68,7 +69,7 @@ public class MinioUtils {
             LOGGER.info("Collected bucket size: {} {}", bucketSize, parsedSize.get("unit"));
             LOGGER.debug("Collected bucket info:\n{}", bucketSizeInfo);
 
-            return bucketSize > 0;
+            return bucketSize >= minSize;
         });
     }
 
