@@ -348,11 +348,6 @@ public class TieredStorageST extends AbstractST {
 
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
         NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "nfs", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
-        try {
-            Thread.sleep(300000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
         String instanceYamlContent = ReadWriteUtils.readFile(NFS_INSTANCE_PATH).replace("NAMESPACE_TO_BE_CHANGE", suiteStorage.getNamespaceName());
 
@@ -390,11 +385,11 @@ public class TieredStorageST extends AbstractST {
         NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
         cluster.setNamespace(suiteStorage.getNamespaceName());
 
-//        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
-//        this.clusterOperator = this.clusterOperator
-//            .defaultInstallation()
-//            .createInstallation()
-//            .runInstallation();
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation()
+            .createInstallation()
+            .runInstallation();
     }
 }
