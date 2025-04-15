@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Stack;
 
 import static io.strimzi.systemtest.TestConstants.GLOBAL_POLL_INTERVAL;
@@ -344,6 +346,8 @@ public class TieredStorageST extends AbstractST {
     private void deployNfsInstance() {
         LOGGER.info("=== Deploying NFS instance === wait");
 
+        // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
+        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "NFS", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
         try {
             Thread.sleep(300000);
         } catch (InterruptedException e) {
