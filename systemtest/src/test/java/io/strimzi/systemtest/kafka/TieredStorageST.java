@@ -388,9 +388,9 @@ public class TieredStorageST extends AbstractST {
 
         ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+//        this.clusterOperator = this.clusterOperator
+//            .defaultInstallation()
+//            .createInstallation()
+//            .runInstallation();
     }
 }
