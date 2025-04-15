@@ -342,7 +342,13 @@ public class TieredStorageST extends AbstractST {
      * Install NFS instance
      */
     private void deployNfsInstance() {
-        LOGGER.info("=== Deploying NFS instance ===");
+        LOGGER.info("=== Deploying NFS instance === wait");
+
+        try {
+            Thread.sleep(300000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         String instanceYamlContent = ReadWriteUtils.readFile(NFS_INSTANCE_PATH).replace("NAMESPACE_TO_BE_CHANGE", suiteStorage.getNamespaceName());
 
