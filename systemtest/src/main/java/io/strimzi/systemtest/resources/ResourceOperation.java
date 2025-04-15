@@ -25,7 +25,7 @@ public class ResourceOperation {
 
         switch (kind) {
             case Kafka.RESOURCE_KIND:
-                timeout = Duration.ofMinutes(14).toMillis();
+                timeout = Duration.ofMinutes(60).toMillis();
                 break;
             case KafkaConnect.RESOURCE_KIND:
             case KafkaMirrorMaker2.RESOURCE_KIND:
