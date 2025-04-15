@@ -42,7 +42,7 @@ public class SuiteThreadController {
             } else {
                 LOGGER.warn("User did not specify junit.jupiter.execution.parallel.config.fixed.parallelism " +
                     "in junit-platform.properties gonna use default as 1 (sequence mode)");
-                maxTestSuitesInParallel = 1;
+                maxTestSuitesInParallel = 2;
             }
         }
         return instance;
