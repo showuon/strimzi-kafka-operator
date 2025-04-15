@@ -347,7 +347,7 @@ public class TieredStorageST extends AbstractST {
         LOGGER.info("=== Deploying NFS instance === wait");
 
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "NFS", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
+        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "nfs", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
         try {
             Thread.sleep(300000);
         } catch (InterruptedException e) {
