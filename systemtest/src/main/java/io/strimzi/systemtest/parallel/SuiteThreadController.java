@@ -41,8 +41,8 @@ public class SuiteThreadController {
                 LOGGER.info("Going to execute {} tests in parallel", maxTestSuitesInParallel);
             } else {
                 LOGGER.warn("User did not specify junit.jupiter.execution.parallel.config.fixed.parallelism " +
-                    "in junit-platform.properties gonna use default as 1 (sequence mode)");
-                maxTestSuitesInParallel = 1;
+                    "in junit-platform.properties gonna use default as 2 (sequence mode)");
+                maxTestSuitesInParallel = 2;
             }
         }
         return instance;
@@ -56,19 +56,19 @@ public class SuiteThreadController {
     }
 
     public void addParallelTest(ExtensionContext extensionContext) {
-        LOGGER.debug("[{}] - Adding parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
+        LOGGER.info("[{}] - Adding parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
         runningTestCasesInParallelCount.incrementAndGet();
 
-        LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
+        LOGGER.info("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
 
     public void removeParallelTest(ExtensionContext extensionContext) {
-        LOGGER.debug("[{}] - Removing parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
+        LOGGER.info("[{}] - Removing parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
         runningTestCasesInParallelCount.decrementAndGet();
 
-        LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
+        LOGGER.info("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
 
     /**
@@ -89,7 +89,7 @@ public class SuiteThreadController {
         waitingTestCases.add(testCaseToWait);
 
         if (runningTestCasesInParallelCount.get() > maxTestSuitesInParallel) {
-            LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
+            LOGGER.info("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
                     "test cases in parallel. ({}/{})", testCaseToWait, runningTestCasesInParallelCount.get(),
                 maxTestSuitesInParallel);
         }
@@ -130,7 +130,7 @@ public class SuiteThreadController {
      * @param extensionContext extension context for identifying, which test suite notifies.
      */
     public void notifyParallelTestToAllowExecution(ExtensionContext extensionContext) {
-        LOGGER.debug("{} - Notifies waiting TestCases: {} to and randomly select one to start execution", extensionContext.getDisplayName(), waitingTestCases.toString());
+        LOGGER.info("{} - Notifies waiting TestCases: {} to and randomly select one to start execution", extensionContext.getDisplayName(), waitingTestCases.toString());
         isParallelTestReleased.set(true);
     }
 }
