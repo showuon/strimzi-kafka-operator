@@ -348,11 +348,6 @@ public class TieredStorageST extends AbstractST {
      */
     private void deployNfsInstance() {
         LOGGER.info("=== Deploying NFS instance ===");
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
         // allow NetworkPolicies for the NFS in case that we have "default to deny all" mode enabled
         NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "nfs", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
@@ -379,6 +374,13 @@ public class TieredStorageST extends AbstractST {
      * Install Minio instance
      */
     private void deployMinioInstance() {
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
