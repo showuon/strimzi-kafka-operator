@@ -284,7 +284,8 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                 }
 
                 ResourceManager.getInstance().createResourceWithWait(networkPolicy);
-                LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
+                LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}",
+                        Environment.DEFAULT_TO_DENY_NETWORK_POLICIES ? DefaultNetworkPolicy.DEFAULT_TO_DENY : DefaultNetworkPolicy.DEFAULT_TO_ALLOW, namespace);
             }
         }
     }
